@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="theme-color" content="#e63946" />
+  <link rel="manifest" href="./manifest.json" />
+  <title>Academia Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --bg: #0f0f0f;
+      --bg2: #1a1a1a;
+      --bg3: #242424;
+      --accent: #e63946;
+      --accent2: #ff6b6b;
+      --text: #f0f0f0;
+      --text2: #aaaaaa;
+      --green: #2ec27e;
+      --yellow: #f5a623;
+      --radius: 14px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      background: var(--bg2);
+      padding: 16px 20px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid #2a2a2a;
+    }
+    .header h1 { font-size: 18px; font-weight: 700; color: var(--accent); }
+    .header span { font-size: 22px; }
+
+    /* ===== BOTTOM NAV ===== */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--bg2);
+      border-top: 1px solid #2a2a2a;
+      display: flex;
+      z-index: 100;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .nav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 4px 8px;
+      border: none;
+      background: none;
+      color: var(--text2);
+      font-size: 10px;
+      cursor: pointer;
+      transition: color 0.2s;
+      gap: 3px;
+    }
+    .nav-btn .icon { font-size: 22px; }
+    .nav-btn.active { color: var(--accent); }
+
+    /* ===== SCREENS ===== */
+    .screen { display: none; padding: 16px 16px 90px; }
+    .screen.active { display: block; }
+
+    /* ===== CARDS ===== */
+    .card {
+      background: var(--bg2);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid #2a2a2a;
+    }
+    .card-title {
+      font-size: 13px;
+      color: var(--text2);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .card-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .card-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+    /* ===== STATS GRID ===== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .stat-card {
+      background: var(--bg2);
+      border-radius: var(--radius);
+      padding: 14px;
+      border: 1px solid #2a2a2a;
+      text-align: center;
+    }
+    .stat-icon { font-size: 24px; margin-bottom: 4px; }
+    .stat-value { font-size: 22px; font-weight: 700; }
+    .stat-label { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.97); opacity: 0.85; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-secondary { background: var(--bg3); color: var(--text); border: 1px solid #333; }
+    .btn-green { background: var(--green); color: white; }
+    .btn-sm {
+      padding: 8px 14px;
+      font-size: 13px;
+      width: auto;
+      border-radius: 8px;
+    }
+
+    /* ===== FORM ===== */
+    .form-group { margin-bottom: 14px; }
+    .form-label { font-size: 13px; color: var(--text2); margin-bottom: 6px; display: block; }
+    .form-input {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid #333;
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 15px;
+      padding: 12px 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus { border-color: var(--accent); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+    select.form-input { appearance: none; }
+
+    /* ===== SECTION TITLE ===== */
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ===== EXERCISE LIST ===== */
+    .exercise-item {
+      background: var(--bg3);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .exercise-name { font-size: 14px; font-weight: 600; }
+    .exercise-info { font-size: 12px; color: var(--text2); margin-top: 2px; }
+    .exercise-badge {
+      background: var(--accent);
+      color: white;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .delete-btn {
+      background: none;
+      border: none;
+      color: #666;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    /* ===== MODAL ===== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 200;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--bg2);
+      border-radius: 20px 20px 0 0;
+      padding: 20px 16px;
+      width: 100%;
+      max-height: 88vh;
+      overflow-y: auto;
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .modal-handle {
+      width: 40px;
+      height: 4px;
+      background: #444;
+      border-radius: 2px;
+      margin: 0 auto 16px;
+    }
+    .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+
+    /* ===== SUGGESTION CARDS ===== */
+    .suggestion-card {
+      background: var(--bg3);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 10px;
+      border-left: 3px solid var(--accent);
+    }
+    .suggestion-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .suggestion-detail { font-size: 12px; color: var(--text2); }
+    .suggestion-tip {
+      font-size: 12px;
+      color: var(--accent2);
+      margin-top: 6px;
+      font-style: italic;
+    }
+
+    /* ===== HISTORY ===== */
+    .history-item {
+      background: var(--bg2);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 10px;
+      border: 1px solid #2a2a2a;
+      cursor: pointer;
+    }
+    .history-date { font-size: 13px; color: var(--text2); margin-bottom: 4px; }
+    .history-name { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+    .history-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+    .badge {
+      background: var(--bg3);
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 11px;
+      color: var(--text2);
+      border: 1px solid #333;
+    }
+
+    /* ===== CHIP SELECTOR ===== */
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .chip {
+      padding: 8px 14px;
+      border-radius: 20px;
+      border: 1px solid #333;
+      background: var(--bg3);
+      color: var(--text2);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .chip.selected { background: var(--accent); border-color: var(--accent); color: white; }
+
+    /* ===== PROGRESS BAR ===== */
+    .progress-row { margin-bottom: 12px; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+    .progress-bar-bg { height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.5s; }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text2);
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-text { font-size: 15px; }
+
+    /* ===== GREETING ===== */
+    .greeting { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .greeting-sub { font-size: 14px; color: var(--text2); margin-bottom: 16px; }
+
+    /* ===== CHART CONTAINER ===== */
+    .chart-container { position: relative; height: 220px; margin-top: 10px; }
+
+    /* ===== TOAST ===== */
+    .toast {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--green);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 300;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ===== DIVIDER ===== */
+    .divider { height: 1px; background: #2a2a2a; margin: 14px 0; }
+
+    /* ===== STREAK ===== */
+    .streak-banner {
+      background: linear-gradient(135deg, #e63946, #c1121f);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .streak-icon { font-size: 36px; }
+    .streak-text h3 { font-size: 18px; font-weight: 700; }
+    .streak-text p { font-size: 13px; opacity: 0.85; margin-top: 2px; }
+
+    .tag-muscular {
+      display: inline-block;
+      background: var(--bg3);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 11px;
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <h1>💪 Academia Tracker</h1>
+  <span id="headerIcon">🏠</span>
+</div>
+
+<!-- TELA: DASHBOARD -->
+<div class="screen active" id="screen-dashboard">
+  <div id="greetingBlock"></div>
+  <div class="stats-grid" id="statsGrid"></div>
+  <div id="streakBlock"></div>
+  <div class="section-title">📅 Treino de Hoje</div>
+  <div id="todayBlock"></div>
+  <button class="btn btn-primary" onclick="irParaTreino()">
+    ➕ Registrar Treino de Hoje
+  </button>
+</div>
+
+<!-- TELA: TREINO -->
+<div class="screen" id="screen-treino">
+  <div class="section-title">📝 Novo Treino</div>
+  <div class="card">
+    <div class="form-group">
+      <label class="form-label">Nome do Treino (ex: Treino A, Peito e Tríceps)</label>
+      <input type="text" class="form-input" id="treinoNome" placeholder="Ex: Treino A - Peito" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Data</label>
+      <input type="date" class="form-input" id="treinoData" />
+    </div>
+  </div>
+
+  <div class="section-title">🏋️ Exercícios</div>
+  <div id="exerciciosAdicionados"></div>
+  <button class="btn btn-secondary" style="margin-bottom:12px" onclick="abrirModalExercicio()">
+    ➕ Adicionar Exercício
+  </button>
+
+  <button class="btn btn-primary" onclick="salvarTreino()">
+    ✅ Salvar Treino
+  </button>
+</div>
+
+<!-- TELA: EVOLUÇÃO -->
+<div class="screen" id="screen-evolucao">
+  <div class="section-title">📈 Evolução de Cargas</div>
+  <div class="card">
+    <div class="form-group" style="margin-bottom:0">
+      <label class="form-label">Selecione o exercício</label>
+      <select class="form-input" id="selectExercicio" onchange="renderGrafico()">
+        <option value="">-- Escolha um exercício --</option>
+      </select>
+    </div>
+  </div>
+  <div id="graficoBlock"></div>
+  <div id="evolucaoStats"></div>
+</div>
+
+<!-- TELA: SUGESTÕES -->
+<div class="screen" id="screen-sugestoes">
+  <div class="section-title">🤖 Sugestão de Exercícios</div>
+
+  <div class="card">
+    <div class="form-group">
+      <label class="form-label">🎯 Objetivo</label>
+      <div class="chips" id="chipsObjetivo">
+        <div class="chip selected" data-group="objetivo" data-val="hipertrofia">Hipertrofia</div>
+        <div class="chip" data-group="objetivo" data-val="forca">Força</div>
+        <div class="chip" data-group="objetivo" data-val="emagrecimento">Emagrecimento</div>
+        <div class="chip" data-group="objetivo" data-val="resistencia">Resistência</div>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:0">
+      <label class="form-label">💪 Grupo Muscular</label>
+      <div class="chips" id="chipsMuscular">
+        <div class="chip selected" data-group="muscular" data-val="peito">Peito</div>
+        <div class="chip" data-group="muscular" data-val="costas">Costas</div>
+        <div class="chip" data-group="muscular" data-val="pernas">Pernas</div>
+        <div class="chip" data-group="muscular" data-val="ombros">Ombros</div>
+        <div class="chip" data-group="muscular" data-val="biceps">Bíceps</div>
+        <div class="chip" data-group="muscular" data-val="triceps">Tríceps</div>
+        <div class="chip" data-group="muscular" data-val="abdomen">Abdômen</div>
+        <div class="chip" data-group="muscular" data-val="cardio">Cardio</div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" onclick="gerarSugestoes()" style="margin-bottom:14px">
+    🔍 Gerar Sugestões
+  </button>
+
+  <div id="sugestoesBlock"></div>
+</div>
+
+<!-- TELA: HISTÓRICO -->
+<div class="screen" id="screen-historico">
+  <div class="section-title">🗂 Histórico de Treinos</div>
+  <div class="form-group">
+    <input type="text" class="form-input" id="buscaHistorico" placeholder="🔍 Buscar treino..." oninput="renderHistorico()" />
+  </div>
+  <div id="historicoBlock"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="nav-dashboard" onclick="irPara('dashboard')">
+    <span class="icon">🏠</span>
+    <span>Início</span>
+  </button>
+  <button class="nav-btn" id="nav-treino" onclick="irPara('treino')">
+    <span class="icon">📝</span>
+    <span>Treino</span>
+  </button>
+  <button class="nav-btn" id="nav-evolucao" onclick="irPara('evolucao')">
+    <span class="icon">📈</span>
+    <span>Evolução</span>
+  </button>
+  <button class="nav-btn" id="nav-sugestoes" onclick="irPara('sugestoes')">
+    <span class="icon">🤖</span>
+    <span>Sugestões</span>
+  </button>
+  <button class="nav-btn" id="nav-historico" onclick="irPara('historico')">
+    <span class="icon">🗂</span>
+    <span>Histórico</span>
+  </button>
+</nav>
+
+<!-- MODAL: ADICIONAR EXERCÍCIO -->
+<div class="modal-overlay" id="modalExercicio">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">➕ Adicionar Exercício</div>
+
+    <div class="form-group">
+      <label class="form-label">Grupo Muscular</label>
+      <select class="form-input" id="modalGrupo" onchange="carregarExerciciosModal()">
+        <option value="">Selecione...</option>
+        <option value="peito">Peito</option>
+        <option value="costas">Costas</option>
+        <option value="pernas">Pernas</option>
+        <option value="ombros">Ombros</option>
+        <option value="biceps">Bíceps</option>
+        <option value="triceps">Tríceps</option>
+        <option value="abdomen">Abdômen</option>
+        <option value="cardio">Cardio</option>
+        <option value="outro">Outro</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Exercício</label>
+      <select class="form-input" id="modalExercicioSelect">
+        <option value="">Selecione o grupo primeiro...</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Ou digite o nome manualmente</label>
+      <input type="text" class="form-input" id="modalNomeManual" placeholder="Ex: Supino Reto" />
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Séries</label>
+        <input type="number" class="form-input" id="modalSeries" placeholder="4" min="1" max="20" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reps</label>
+        <input type="number" class="form-input" id="modalReps" placeholder="12" min="1" max="100" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Carga (kg)</label>
+        <input type="number" class="form-input" id="modalCarga" placeholder="60" min="0" step="0.5" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Observação (opcional)</label>
+      <input type="text" class="form-input" id="modalObs" placeholder="Ex: aumentar na próxima semana" />
+    </div>
+
+    <button class="btn btn-primary" style="margin-bottom:10px" onclick="confirmarExercicio()">
+      ✅ Adicionar
+    </button>
+    <button class="btn btn-secondary" onclick="fecharModal()">
+      Cancelar
+    </button>
+  </div>
+</div>
+
+<!-- MODAL: DETALHE HISTÓRICO -->
+<div class="modal-overlay" id="modalHistoricoDetalhe">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div id="modalHistoricoConteudo"></div>
+    <button class="btn btn-secondary" style="margin-top:10px" onclick="fecharModalHistorico()">
+      Fechar
+    </button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== ESTADO =====
+let telaAtual = 'dashboard';
+let treinoAtual = [];
+let objetivoSelecionado = 'hipertrofia';
+let muscularSelecionado = 'peito';
+let chartInstance = null;
+
+// ===== STORAGE =====
+function getTreinos() {
+  try { return JSON.parse(localStorage.getItem('treinos') || '[]'); } catch { return []; }
+}
+function salvarTreinos(arr) { localStorage.setItem('treinos', JSON.stringify(arr)); }
+
+// ===== BANCO DE EXERCÍCIOS =====
+const exerciciosBanco = {
+  peito: ['Supino Reto', 'Supino Inclinado', 'Supino Declinado', 'Crossover', 'Crucifixo', 'Peck Deck', 'Flexão de Braço', 'Pullover'],
+  costas: ['Puxada Frontal', 'Puxada Aberta', 'Remada Curvada', 'Remada Unilateral', 'Remada Sentado', 'Levantamento Terra', 'Barra Fixa', 'Remada Cavalinho'],
+  pernas: ['Agachamento Livre', 'Leg Press 45°', 'Cadeira Extensora', 'Mesa Flexora', 'Agachamento Hack', 'Stiff', 'Panturrilha em Pé', 'Afundo', 'Avanço', 'Sumô'],
+  ombros: ['Desenvolvimento com Barra', 'Desenvolvimento com Halteres', 'Elevação Lateral', 'Elevação Frontal', 'Encolhimento', 'Voador Invertido', 'Arnold Press'],
+  biceps: ['Rosca Direta', 'Rosca Alternada', 'Rosca Martelo', 'Rosca Concentrada', 'Rosca Scott', 'Rosca no Cabo'],
+  triceps: ['Tríceps Testa', 'Tríceps Pulley', 'Tríceps Coice', 'Mergulho no Banco', 'Extensão Francesa', 'Tríceps Corda'],
+  abdomen: ['Abdominal Crunch', 'Prancha', 'Elevação de Pernas', 'Abdominal Oblíquo', 'Bicicleta', 'Hollow Body', 'Roda Abdominal'],
+  cardio: ['Esteira', 'Bicicleta', 'Elíptico', 'Corda', 'Escada', 'HIIT', 'Corrida Leve'],
+  outro: []
+};
+
+// ===== BANCO DE SUGESTÕES =====
+const sugestoesBanco = {
+  peito: {
+    hipertrofia: [
+      { nome: 'Supino Reto com Barra', series: '4x8-12', carga: 'Moderada-Alta', tip: 'Desça a barra até o peito, foque na contração.' },
+      { nome: 'Supino Inclinado com Halteres', series: '3x10-12', carga: 'Moderada', tip: 'Ótimo para a porção superior do peitoral.' },
+      { nome: 'Crucifixo no Banco Plano', series: '3x12-15', carga: 'Leve-Moderada', tip: 'Mantenha leve flexão nos cotovelos.' },
+      { nome: 'Crossover no Cabo', series: '3x12-15', carga: 'Leve', tip: 'Ideal para finalizar e dar forma ao peitoral.' }
+    ],
+    forca: [
+      { nome: 'Supino Reto com Barra', series: '5x3-5', carga: 'Alta', tip: 'Foco na força máxima. Descanso 3-5 min entre séries.' },
+      { nome: 'Supino Declinado', series: '4x4-6', carga: 'Alta', tip: 'Permite carga mais elevada que o supino plano.' },
+      { nome: 'Flexão de Braço Lastrada', series: '4x5-8', carga: 'Alta', tip: 'Use colete lastrado para aumentar a dificuldade.' }
+    ],
+    emagrecimento: [
+      { nome: 'Circuito: Flexão + Supino', series: '4x15-20', carga: 'Leve', tip: 'Pouco descanso entre exercícios para manter frequência cardíaca elevada.' },
+      { nome: 'Supino Inclinado', series: '3x15-20', carga: 'Leve-Moderada', tip: 'Intervalo curto de 45 segundos.' },
+      { nome: 'Peck Deck', series: '3x20', carga: 'Leve', tip: 'Foco na queima e definição.' }
+    ],
+    resistencia: [
+      { nome: 'Flexão de Braço', series: '4x20-30', carga: 'Peso Corporal', tip: 'Aumente reps progressivamente cada semana.' },
+      { nome: 'Supino Leve', series: '4x20-25', carga: 'Leve', tip: 'Descanso de 30-45 segundos.' }
+    ]
+  },
+  costas: {
+    hipertrofia: [
+      { nome: 'Puxada Frontal', series: '4x8-12', carga: 'Moderada-Alta', tip: 'Puxe até o queixo, expanda o peito.' },
+      { nome: 'Remada Curvada com Barra', series: '4x8-12', carga: 'Moderada-Alta', tip: 'Essencial para espessura das costas.' },
+      { nome: 'Remada Unilateral com Haltere', series: '3x10-12', carga: 'Moderada', tip: 'Foque em retrair a escápula no topo.' },
+      { nome: 'Levantamento Terra', series: '3x6-8', carga: 'Alta', tip: 'Um dos melhores para costas completas.' }
+    ],
+    forca: [
+      { nome: 'Levantamento Terra', series: '5x3-5', carga: 'Máxima', tip: 'Principal exercício de força. Técnica é essencial.' },
+      { nome: 'Barra Fixa Lastrada', series: '4x4-6', carga: 'Alta', tip: 'Use cinto de carga para progredir.' },
+      { nome: 'Remada Curvada', series: '4x4-6', carga: 'Alta', tip: 'Base para força em puxadas.' }
+    ],
+    emagrecimento: [
+      { nome: 'Puxada no Cabo', series: '4x15-20', carga: 'Leve-Moderada', tip: 'Intervalo de 45s para manter FC elevada.' },
+      { nome: 'Remada Sentado', series: '3x15', carga: 'Leve', tip: 'Bom para trabalhar costas com volume alto.' }
+    ],
+    resistencia: [
+      { nome: 'Barra Fixa', series: '5x Max', carga: 'Peso Corporal', tip: 'Tente bater seu recorde de reps a cada sessão.' },
+      { nome: 'Puxada com Elástico', series: '4x20', carga: 'Leve', tip: 'Excelente para resistência muscular.' }
+    ]
+  },
+  pernas: {
+    hipertrofia: [
+      { nome: 'Agachamento Livre', series: '4x8-12', carga: 'Moderada-Alta', tip: 'Rei dos exercícios. Desça até 90° ou mais.' },
+      { nome: 'Leg Press 45°', series: '4x10-12', carga: 'Alta', tip: 'Varie o posicionamento dos pés.' },
+      { nome: 'Cadeira Extensora', series: '3x12-15', carga: 'Moderada', tip: 'Ótimo para isolar o quadríceps.' },
+      { nome: 'Mesa Flexora', series: '3x12-15', carga: 'Moderada', tip: 'Trabalha o bíceps femoral isoladamente.' },
+      { nome: 'Panturrilha em Pé', series: '4x15-20', carga: 'Alta', tip: 'Pause 2s em cima para maior ativação.' }
+    ],
+    forca: [
+      { nome: 'Agachamento Livre', series: '5x3-5', carga: 'Máxima', tip: 'Foco em força. Descanso 4-5 minutos.' },
+      { nome: 'Levantamento Terra Romeno', series: '4x4-6', carga: 'Alta', tip: 'Excelente para força posterior.' }
+    ],
+    emagrecimento: [
+      { nome: 'Agachamento Sumô', series: '4x15-20', carga: 'Moderada', tip: 'Ativa glúteos e adutores também.' },
+      { nome: 'Avanço Caminhando', series: '3x20 passos', carga: 'Peso Corporal/Halteres', tip: 'Excelente gasto calórico.' },
+      { nome: 'Leg Press', series: '4x20', carga: 'Moderada', tip: 'Volume alto com intervalo curto.' }
+    ],
+    resistencia: [
+      { nome: 'Afundo', series: '4x20', carga: 'Peso Corporal', tip: 'Mantenha o ritmo constante.' },
+      { nome: 'Agachamento com Salto', series: '4x15', carga: 'Peso Corporal', tip: 'Eleva frequência cardíaca.' }
+    ]
+  },
+  ombros: {
+    hipertrofia: [
+      { nome: 'Desenvolvimento com Halteres', series: '4x8-12', carga: 'Moderada', tip: 'Melhor amplitude que com barra.' },
+      { nome: 'Elevação Lateral', series: '4x12-15', carga: 'Leve-Moderada', tip: 'Foco na porção lateral do deltoide.' },
+      { nome: 'Elevação Frontal', series: '3x12', carga: 'Leve', tip: 'Trabalha a cabeça anterior.' },
+      { nome: 'Voador Invertido', series: '3x15', carga: 'Leve', tip: 'Deltóide posterior. Crucial para equilíbrio.' }
+    ],
+    forca: [
+      { nome: 'Desenvolvimento com Barra', series: '5x3-5', carga: 'Alta', tip: 'Permite carga máxima nos ombros.' },
+      { nome: 'Arnold Press', series: '4x6-8', carga: 'Moderada-Alta', tip: 'Trabalha todas as cabeças do deltóide.' }
+    ],
+    emagrecimento: [
+      { nome: 'Elevação Lateral', series: '4x20', carga: 'Leve', tip: 'Série longa com descanso curto.' },
+      { nome: 'Desenvolvimento Leve', series: '3x20', carga: 'Leve', tip: 'Volume para definição.' }
+    ],
+    resistencia: [
+      { nome: 'Elevação Lateral', series: '5x20-25', carga: 'Leve', tip: 'Aguente o peso por mais tempo.' },
+      { nome: 'Círculos com Braço', series: '4x30s', carga: 'Peso Corporal', tip: 'Resistência isométrica.' }
+    ]
+  },
+  biceps: {
+    hipertrofia: [
+      { nome: 'Rosca Direta com Barra', series: '4x8-12', carga: 'Moderada-Alta', tip: 'Exercício base para bíceps.' },
+      { nome: 'Rosca Alternada com Haltere', series: '3x10-12', carga: 'Moderada', tip: 'Supine o punho no topo para maior contração.' },
+      { nome: 'Rosca Scott', series: '3x10-12', carga: 'Moderada', tip: 'Isola o bíceps eliminando trapaça.' },
+      { nome: 'Rosca Martelo', series: '3x12', carga: 'Moderada', tip: 'Trabalha o braquial e braquiorradial.' }
+    ],
+    forca: [
+      { nome: 'Rosca Direta com Barra', series: '5x4-6', carga: 'Alta', tip: 'Foco em aumentar a carga a cada semana.' },
+      { nome: 'Rosca Concentrada', series: '4x6-8', carga: 'Alta', tip: 'Máxima contração no pico.' }
+    ],
+    emagrecimento: [
+      { nome: 'Rosca Alternada', series: '4x15-20', carga: 'Leve', tip: 'Intervalo curto.' },
+      { nome: 'Rosca no Cabo', series: '3x20', carga: 'Leve', tip: 'Tensão constante durante toda execução.' }
+    ],
+    resistencia: [
+      { nome: 'Rosca com Elástico', series: '4x25', carga: 'Leve', tip: 'Ótimo para volume e resistência.' }
+    ]
+  },
+  triceps: {
+    hipertrofia: [
+      { nome: 'Tríceps Testa com Barra', series: '4x8-12', carga: 'Moderada', tip: 'Foco na cabeça longa do tríceps.' },
+      { nome: 'Tríceps Pulley com Corda', series: '4x10-12', carga: 'Moderada', tip: 'Abra a corda no final para maior amplitude.' },
+      { nome: 'Mergulho no Banco', series: '3x12-15', carga: 'Peso Corporal', tip: 'Adicione peso no colo para progredir.' },
+      { nome: 'Extensão Francesa', series: '3x10-12', carga: 'Moderada', tip: 'Cabeça longa. Excelente para volume.' }
+    ],
+    forca: [
+      { nome: 'Tríceps Testa Pesado', series: '5x4-6', carga: 'Alta', tip: 'Fundamental para força no supino.' },
+      { nome: 'Mergulho Lastrado', series: '4x5-8', carga: 'Alta', tip: 'Use cinto de carga.' }
+    ],
+    emagrecimento: [
+      { nome: 'Tríceps Corda', series: '4x20', carga: 'Leve', tip: 'Queima local com volume alto.' },
+      { nome: 'Mergulho no Banco', series: '3x20', carga: 'Peso Corporal', tip: 'Intervalo curto.' }
+    ],
+    resistencia: [
+      { nome: 'Tríceps Pulley', series: '5x20-25', carga: 'Leve', tip: 'Resistência muscular localizada.' }
+    ]
+  },
+  abdomen: {
+    hipertrofia: [
+      { nome: 'Abdominal com Peso', series: '4x12-15', carga: 'Moderada', tip: 'Segure peso no peito no crunch.' },
+      { nome: 'Roda Abdominal', series: '4x10-15', carga: 'Peso Corporal', tip: 'Excelente para reto abdominal.' },
+      { nome: 'Elevação de Pernas Suspenso', series: '3x12-15', carga: 'Peso Corporal', tip: 'Foco no abdômen inferior.' }
+    ],
+    forca: [
+      { nome: 'Prancha', series: '4x60s', carga: 'Isométrico', tip: 'Base para força do core.' },
+      { nome: 'Hollow Body', series: '4x30-45s', carga: 'Isométrico', tip: 'Excelente estabilidade.' }
+    ],
+    emagrecimento: [
+      { nome: 'Circuito Abdominal', series: '4 rodadas', carga: 'Peso Corporal', tip: 'Crunch + Bicicleta + Prancha em sequência.' },
+      { nome: 'Bicicleta Abdominal', series: '4x30', carga: 'Peso Corporal', tip: 'Oblíquos e reto abdominal simultâneos.' }
+    ],
+    resistencia: [
+      { nome: 'Prancha', series: '5x Max', carga: 'Isométrico', tip: 'Bata seu recorde de tempo.' },
+      { nome: 'Abdominal Crunch', series: '5x30-50', carga: 'Peso Corporal', tip: 'Alto volume para resistência.' }
+    ]
+  },
+  cardio: {
+    hipertrofia: [
+      { nome: 'Esteira (Aquecimento)', series: '10-15 min', carga: 'Leve', tip: 'Apenas para aquecer antes do treino.' }
+    ],
+    forca: [
+      { nome: 'Bicicleta (Aquecimento)', series: '10 min', carga: 'Leve', tip: 'Aquece articulações sem cansar.' }
+    ],
+    emagrecimento: [
+      { nome: 'HIIT na Esteira', series: '20 min', carga: 'Alternado', tip: '30s intenso / 30s leve. Máximo gasto calórico.' },
+      { nome: 'Elíptico', series: '30-40 min', carga: 'Moderada', tip: 'Baixo impacto, alto gasto calórico.' },
+      { nome: 'Corda (Pular)', series: '15-20 min', carga: 'Moderada', tip: '600-800 kcal/hora.' }
+    ],
+    resistencia: [
+      { nome: 'Corrida Contínua', series: '30-45 min', carga: 'Moderada', tip: 'Aumente 10% o volume por semana.' },
+      { nome: 'Bicicleta', series: '40-60 min', carga: 'Moderada', tip: 'Baixo impacto para resistência.' }
+    ]
+  }
+};
+
+// ===== NAVEGAÇÃO =====
+function irPara(tela) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + tela).classList.add('active');
+  document.getElementById('nav-' + tela).classList.add('active');
+  telaAtual = tela;
+
+  const icons = { dashboard: '🏠', treino: '📝', evolucao: '📈', sugestoes: '🤖', historico: '🗂' };
+  document.getElementById('headerIcon').textContent = icons[tela] || '💪';
+
+  if (tela === 'dashboard') renderDashboard();
+  if (tela === 'evolucao') renderEvolucao();
+  if (tela === 'historico') renderHistorico();
+}
+
+function irParaTreino() {
+  treinoAtual = [];
+  const hoje = new Date().toISOString().split('T')[0];
+  document.getElementById('treinoData').value = hoje;
+  document.getElementById('treinoNome').value = '';
+  irPara('treino');
+  renderExerciciosAdicionados();
+}
+
+// ===== DASHBOARD =====
+function renderDashboard() {
+  const hora = new Date().getHours();
+  let saudacao = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';
+  document.getElementById('greetingBlock').innerHTML = `
+    <div class="greeting">${saudacao}! 💪</div>
+    <div class="greeting-sub">Hora de superar seus limites.</div>
+  `;
+
+  const treinos = getTreinos();
+  const hoje = new Date().toISOString().split('T')[0];
+  const treinosHoje = treinos.filter(t => t.data === hoje);
+
+  // Semana atual
+  const agora = new Date();
+  const diaSemana = agora.getDay();
+  const inicioSemana = new Date(agora);
+  inicioSemana.setDate(agora.getDate() - diaSemana);
+
+  const treinosSemana = treinos.filter(t => {
+    const d = new Date(t.data + 'T00:00:00');
+    return d >= inicioSemana;
+  });
+
+  // Streak
+  let streak = 0;
+  const diasUnicos = [...new Set(treinos.map(t => t.data))].sort().reverse();
+  const dataCheck = new Date();
+  for (let i = 0; i < diasUnicos.length; i++) {
+    const esperado = new Date(dataCheck);
+    esperado.setDate(dataCheck.getDate() - i);
+    const esperadoStr = esperado.toISOString().split('T')[0];
+    if (diasUnicos[i] === esperadoStr) streak++;
+    else break;
+  }
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-icon">🏋️</div>
+      <div class="stat-value">${treinos.length}</div>
+      <div class="stat-label">Total de Treinos</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📅</div>
+      <div class="stat-value">${treinosSemana.length}</div>
+      <div class="stat-label">Treinos essa semana</div>
+    </div>
+  `;
+
+  if (streak > 0) {
+    document.getElementById('streakBlock').innerHTML = `
+      <div class="streak-banner">
+        <div class="streak-icon">🔥</div>
+        <div class="streak-text">
+          <h3>${streak} dia${streak > 1 ? 's' : ''} seguido${streak > 1 ? 's' : ''}!</h3>
+          <p>${streak >= 7 ? 'Incrível! Você está dominando!' : streak >= 3 ? 'Ótimo ritmo, continue assim!' : 'Bom começo, não pare!'}</p>
+        </div>
+      </div>
+    `;
+  } else {
+    document.getElementById('streakBlock').innerHTML = '';
+  }
+
+  if (treinosHoje.length > 0) {
+    const t = treinosHoje[treinosHoje.length - 1];
+    const exList = t.exercicios.map(e =>
+      `<div class="exercise-item">
+        <div>
+          <div class="exercise-name">${e.nome}</div>
+          <div class="exercise-info">${e.series} séries x ${e.reps} reps${e.carga > 0 ? ' — ' + e.carga + 'kg' : ''}</div>
+        </div>
+        <div class="exercise-badge">${e.carga > 0 ? e.carga + 'kg' : '✓'}</div>
+      </div>`
+    ).join('');
+    document.getElementById('todayBlock').innerHTML = `
+      <div class="card">
+        <div class="card-title">✅ Treino Registrado</div>
+        <div style="font-weight:700;margin-bottom:10px">${t.nome}</div>
+        ${exList}
+      </div>
+    `;
+  } else {
+    document.getElementById('todayBlock').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🎯</div>
+        <div class="empty-text">Nenhum treino registrado hoje ainda.</div>
+      </div>
+    `;
+  }
+}
+
+// ===== TREINO =====
+function renderExerciciosAdicionados() {
+  const el = document.getElementById('exerciciosAdicionados');
+  if (treinoAtual.length === 0) {
+    el.innerHTML = `<div class="empty-state" style="padding:20px 0"><div class="empty-icon">📋</div><div class="empty-text">Nenhum exercício adicionado ainda.</div></div>`;
+    return;
+  }
+  el.innerHTML = treinoAtual.map((ex, i) => `
+    <div class="exercise-item">
+      <div style="flex:1">
+        <div class="exercise-name">${ex.nome}</div>
+        <div class="exercise-info">${ex.series} séries × ${ex.reps} reps${ex.carga > 0 ? ' — ' + ex.carga + 'kg' : ''}${ex.obs ? ' | ' + ex.obs : ''}</div>
+      </div>
+      <button class="delete-btn" onclick="removerExercicio(${i})">🗑️</button>
+    </div>
+  `).join('');
+}
+
+function removerExercicio(i) {
+  treinoAtual.splice(i, 1);
+  renderExerciciosAdicionados();
+}
+
+function salvarTreino() {
+  const nome = document.getElementById('treinoNome').value.trim();
+  const data = document.getElementById('treinoData').value;
+  if (!nome) { showToast('⚠️ Dê um nome ao treino!', 'warn'); return; }
+  if (treinoAtual.length === 0) { showToast('⚠️ Adicione pelo menos um exercício!', 'warn'); return; }
+  if (!data) { showToast('⚠️ Selecione a data!', 'warn'); return; }
+
+  const treinos = getTreinos();
+  treinos.push({
+    id: Date.now(),
+    data,
+    nome,
+    exercicios: [...treinoAtual],
+    criadoEm: new Date().toISOString()
+  });
+  salvarTreinos(treinos);
+  treinoAtual = [];
+  showToast('✅ Treino salvo com sucesso!');
+  irPara('dashboard');
+}
+
+// ===== MODAL EXERCÍCIO =====
+function abrirModalExercicio() {
+  document.getElementById('modalGrupo').value = '';
+  document.getElementById('modalExercicioSelect').innerHTML = '<option value="">Selecione o grupo primeiro...</option>';
+  document.getElementById('modalNomeManual').value = '';
+  document.getElementById('modalSeries').value = '';
+  document.getElementById('modalReps').value = '';
+  document.getElementById('modalCarga').value = '';
+  document.getElementById('modalObs').value = '';
+  document.getElementById('modalExercicio').classList.add('open');
+}
+
+function fecharModal() {
+  document.getElementById('modalExercicio').classList.remove('open');
+}
+
+function carregarExerciciosModal() {
+  const grupo = document.getElementById('modalGrupo').value;
+  const sel = document.getElementById('modalExercicioSelect');
+  if (!grupo || !exerciciosBanco[grupo]) {
+    sel.innerHTML = '<option value="">Selecione o grupo primeiro...</option>';
+    return;
+  }
+  const lista = exerciciosBanco[grupo];
+  sel.innerHTML = '<option value="">Selecione ou digite abaixo...</option>' +
+    lista.map(ex => `<option value="${ex}">${ex}</option>`).join('');
+}
+
+function confirmarExercicio() {
+  const selectVal = document.getElementById('modalExercicioSelect').value;
+  const manual = document.getElementById('modalNomeManual').value.trim();
+  const nome = manual || selectVal;
+  const series = parseInt(document.getElementById('modalSeries').value) || 3;
+  const reps = parseInt(document.getElementById('modalReps').value) || 12;
+  const carga = parseFloat(document.getElementById('modalCarga').value) || 0;
+  const obs = document.getElementById('modalObs').value.trim();
+
+  if (!nome) { showToast('⚠️ Informe o nome do exercício!', 'warn'); return; }
+
+  treinoAtual.push({ nome, series, reps, carga, obs });
+  fecharModal();
+  renderExerciciosAdicionados();
+  showToast('✅ Exercício adicionado!');
+}
+
+// ===== EVOLUÇÃO =====
+function renderEvolucao() {
+  const treinos = getTreinos();
+  const exerciciosUnicos = new Set();
+  treinos.forEach(t => t.exercicios.forEach(e => {
+    if (e.carga > 0) exerciciosUnicos.add(e.nome);
+  }));
+
+  const sel = document.getElementById('selectExercicio');
+  const valorAtual = sel.value;
+  sel.innerHTML = '<option value="">-- Escolha um exercício --</option>' +
+    [...exerciciosUnicos].sort().map(ex => `<option value="${ex}">${ex}</option>`).join('');
+  if (valorAtual) sel.value = valorAtual;
+
+  renderGrafico();
+}
+
+function renderGrafico() {
+  const exercicio = document.getElementById('selectExercicio').value;
+  const graficoBlock = document.getElementById('graficoBlock');
+  const evolucaoStats = document.getElementById('evolucaoStats');
+
+  if (!exercicio) {
+    graficoBlock.innerHTML = `<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">Selecione um exercício para ver a evolução.</div></div>`;
+    evolucaoStats.innerHTML = '';
+    return;
+  }
+
+  const treinos = getTreinos();
+  const pontos = [];
+
+  treinos.forEach(t => {
+    t.exercicios.forEach(e => {
+      if (e.nome === exercicio && e.carga > 0) {
+        pontos.push({ data: t.data, carga: e.carga });
+      }
+    });
+  });
+
+  pontos.sort((a, b) => a.data.localeCompare(b.data));
+
+  if (pontos.length === 0) {
+    graficoBlock.innerHTML = `<div class="empty-state"><div class="empty-icon">📉</div><div class="empty-text">Nenhuma carga registrada para este exercício ainda.</div></div>`;
+    evolucaoStats.innerHTML = '';
+    return;
+  }
+
+  graficoBlock.innerHTML = `<div class="card"><canvas id="meuGrafico"></canvas></div>`;
+
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+
+  const ctx = document.getElementById('meuGrafico').getContext('2d');
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: pontos.map(p => formatarData(p.data)),
+      datasets: [{
+        label: 'Carga (kg)',
+        data: pontos.map(p => p.carga),
+        borderColor: '#e63946',
+        backgroundColor: 'rgba(230,57,70,0.15)',
+        borderWidth: 2.5,
+        pointBackgroundColor: '#e63946',
+        pointRadius: 5,
+        fill: true,
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#aaa', font: { size: 10 } }, grid: { color: '#2a2a2a' } },
+        y: { ticks: { color: '#aaa' }, grid: { color: '#2a2a2a' } }
+      }
+    }
+  });
+
+  const cargas = pontos.map(p => p.carga);
+  const max = Math.max(...cargas);
+  const min = Math.min(...cargas);
+  const atual = cargas[cargas.length - 1];
+  const primeira = cargas[0];
+  const evolucao = ((atual - primeira) / primeira * 100).toFixed(1);
+
+  evolucaoStats.innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">🏆</div>
+        <div class="stat-value">${max}kg</div>
+        <div class="stat-label">Recorde</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⚡</div>
+        <div class="stat-value">${atual}kg</div>
+        <div class="stat-label">Última carga</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📈 Progresso Total</div>
+      <div class="card-value" style="color:${atual >= primeira ? 'var(--green)' : 'var(--accent)'}">
+        ${evolucao > 0 ? '+' : ''}${evolucao}%
+      </div>
+      <div class="card-sub">De ${primeira}kg → ${atual}kg em ${pontos
+
